@@ -1,0 +1,199 @@
+---
+title: "SNA A2"
+author: "Devan Goto"
+date: "February 2, 2017"
+output: html_document
+---
+
+The data were collected by Vickers from 29 seventh grade students in a school in Victoria, Australia. Students were asked to nominate their classmates on a number of relations including the following three "layers":  
+
+1. Who do you get along with in the class?  
+2. Who are your best friends in the class?  
+3. Who would you prefer to work with?  
+
+Create Table
+```{}
+
+b1<-read.table("best.friends.csv",header=TRUE,sep=",")
+
+g1<-read.table("get.on.with.csv",header=TRUE,sep=",")
+
+w1<-read.table("work.with.csv",header=TRUE,sep=",")
+
+```
+
+Data Wrangling
+
+Manipulate each of the data sets so that it is suitable for building a social network using iGraph.
+
+```{}
+
+#Create edge and vertex data tables for each of the three original tables (b1, g1, w1)
+
+#Edge: Line connecting two verticies.  Shows who is nominating who (connections between the two)
+
+#Vertex: AKA verticies/nodes/dots.  These are the unique students who voted/nominated someone. 
+
+library(tidyr)
+library(dplyr)
+
+b.edge<-dplyr::select(b1,from,to)
+b.vert<-dplyr::select(b1,from,gender.from)
+
+g.edge<-dplyr::select(g1,from,to)
+g.vert<-dplyr::select(g1,from,gender.from)
+
+w.edge<-dplyr::select(w1,from,to)
+w.vert<-dplyr::select(w1,from,gender.from)
+
+#Delete duplicates in the vertex data tables (only want unique verticies when using igraph)
+
+b.vert2<-unique(b.vert)
+g.vert2<-unique(g.vert)
+w.vert2<-unique(w.vert)
+
+```
+
+Visualize the Networks
+
+Create a graph for each of the data sets, are the graphs directed or undirected? Visualize each of the graphs you have created and color the nodes according to gender.
+
+```{}
+
+library(igraph)
+
+#Create graph data frame to showcase the relationships between people/students
+
+b.ig<-graph.data.frame(b.edge, directed = TRUE,vertices = b.vert2)
+
+g.ig<-graph.data.frame(g.edge, directed = TRUE,vertices = g.vert2)
+
+w.ig<-graph.data.frame(w.edge, directed = TRUE,vertices = w.vert2)
+
+#Plot/Visualize each data set
+
+plot(b.ig,layout=layout.fruchterman.reingold,vertex.color= ifelse(b.vert2$gender.from == "female","red", "green"),edge.arrow.size=0.4,main = "Who are your best friends in the class?")
+
+plot(g.ig,layout=layout.fruchterman.reingold,vertex.color= ifelse(g.vert2$gender.from == "female","red", "green"),edge.arrow.size=0.4,main = "Who do you get along with in the class")
+
+plot(w.ig,layout=layout.fruchterman.reingold,vertex.color= ifelse(w.vert2$gender.from == "female","red", "green"),edge.arrow.size=0.4,main = "Who would you prefer to work with?")
+
+#Directed Edge - A directed edge is an ordered pair of nodes that can be represented graphically as an arrow drawn between the nodes.
+
+#Undirected Edge - An undirected edge disregards any sense of direction and treats both nodes interchangeably.
+
+#The graphs are directed (they have arrows that represent relationships).  However there are also many edges that are reciprocal (arrows are pointed both ways).  A direct edge shows us that the feeling is one way.  For example, if an arrow is direct in the "Best Friends" plot this shows us that only one person feels that they are best friends.  If the arrow were pointed both ways (reciprocal) this would show us that both parties feel that they are best friends.  The same logic applies to all graphs. 
+
+```
+
+Simple structures
+
+Do these metrics tell you anything about the networks?
+
+```{}
+
+#Count the number of dyads and the number and type of triads using the following commands.
+
+#dyads
+
+dyad_census(b.ig)
+dyad_census(g.ig)
+dyad_census(w.ig)
+
+#Each of these inputs gives me three outputs each.  
+mut: The number of pairs with mutual connections
+asym: The number of pairs with non-mutual connections
+null:The number of pairs with no connection between them
+
+
+#mut shows us how many relationships are mutual.  For example, do both parties feel the same way towards one another (do two parties both feel that they are best friends)
+
+#asym shows us how many relationships are not-mutal (one-way).  As an example, in this category only one of the two parties would feel that they are best friends.  
+#null shows us how many people mutually feel nothing for one another.  
+
+#This tells us a lot about the networks.  Null and mut relationships show us that feelings within the network are mutual.  However, asym relationships show us relationships that are not mutual.  This is unfortunate, but this tells us that there are mixed feelings about how two parties feel about each other.  This could lead to confusion and possibly contention within the individuals in the network.  
+
+#triads
+
+triad_census(b.ig)
+triad_census(g.ig)
+triad_census(w.ig)
+
+#I am unsure how to use the data from the triads.
+
+```
+
+Cliques
+
+```{}
+
+#Answer the following questions using the clique functions
+
+
+#What is the size of the largest clique(s) in each of the three networks?
+
+clique_num(b.ig)
+#7
+
+clique_num(g.ig)
+#12
+
+clique_num(w.ig)
+#9
+
+
+#Which nodes/vertices are in the largest cliques for the three networks? Is there much overlap?
+
+largest_cliques(b.ig)
+#14, 20, 21, & 22 are in all 5 largest cliques (7 nodes each).  Thus, there a good amount of overlap here. 
+
+largest_cliques(g.ig)
+#8, 11, 22, 14, 19, 15, 20, 13, 23, & 24 are in all 4 largest cliques (12 nodes each).  Thus, there is a good amount of overlap here. 
+
+largest_cliques(w.ig)
+#Nodes 6, 14, 16, 20, 21, 22, & 23 are in all 3 largest cliques (9 nodes each).  Thus there is a lot of overlap between the largest cliques. 
+
+#There is a lot of overlap for each network, in regards to the nodes in the largest cliques.
+
+
+#How many maximal cliques are there in each of the networks?
+
+count_max_cliques(b.ig)
+#35
+
+count_max_cliques(g.ig)
+#64
+
+count_max_cliques(w.ig)
+#36
+
+```
+
+#Components & Cutpoints
+
+Find the cutpoints (articulation points) for each of the three networks you generated. What does this tell you about the graphs? Does what you find match a visual exploration of the networks?
+
+articulation_points()
+```{}
+
+#Articulation Points (Cut verticies/nodes): If removing a vertex and all the edges associated with it results in the increase of the number of connected components in the graph.  This is like finding the weakness in your plot (deleting it and its connected nodes), thus increasing its continuity.
+
+
+articulation_points(b.ig)
+1/29 vertex, named:
+#13
+
+#This means that if we eliminate student 13 from our plot we will have an increase in the number of connected components in the graph.
+
+articulation_points(g.ig)
+0/29 vertices, named:
+
+#This means that this plot will not benefit from removing a node.  In other words an articulation point will not increase the number of connected components in the graph. 
+
+articulation_points(w.ig)
+1/29 vertex, named:
+#13
+
+#This means that if we eliminate student 13 from our plot we will have an increase in the number of connected components in the graph.  This is exactly the same for the best friends plot.  
+
+```
