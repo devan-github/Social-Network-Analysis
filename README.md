@@ -1,7 +1,6 @@
-# Assignment 3
-## Social Network Analysis
+# Social Network Analysis
 
-### Data
+## Data
 In this assignment you will be using data from:
 
 Representing Classroom Social Structure. Melbourne: Victoria Institute of
